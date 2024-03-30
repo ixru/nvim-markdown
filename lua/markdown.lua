@@ -195,7 +195,7 @@ local function parse_bullet(bullet_line)
     if bullet.indent > 0 then
         local section = find_header_or_list(bullet.start - 1)
         while true do
-            if not section.type:match("list") then
+            if not section or not section.type or not section.type:match("list") then
                 -- Can't find parent even though there is supposed to be one
                 break
             elseif vim.fn.indent(section.line) < bullet.indent then
