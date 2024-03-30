@@ -465,7 +465,7 @@ function M.fold()
         if section.type:match("list") then
             local bullet = parse_bullet(section.line)
 
-            if line_num < bullet.start or line_num > bullet.stop then
+            if bullet and (line_num < bullet.start or line_num > bullet.stop) then
                 -- cursor isn't inside the list
                 bullet = nil
             end
