@@ -22,6 +22,7 @@ To install manually instead, see `:help plugin`
  `tab` can be used in insert mode to skip from one field to the next.
 * Follow links with `Return`
 * `Return` will create a link to a markdown file, if pressed over a word.
+* Deleting, pasting, or adding numbered items in normal mode---with `d`, `p`, and `o/O`, respectively---automatically adjusts the indices.
 
 ## Options
 <details><summary>Syntax Concealing</summary>
@@ -125,9 +126,11 @@ JSON syntax highlight requires [vim-json](https://github.com/elzr/vim-json).
    - `]u`: Go to parent header (Up). `<Plug>Markdown_MoveToParentHeader`
    - `Ctrl-c`: Toggle checkboxes. `<Plug>Markdown_Checkbox`
    - `Tab`: Fold headers/lists. `<Plug>Markdown_Fold`
+   - `Shift-Tab`: Deindent bullets. `<Plug>Markdown_DeindentListItem`
    - `Return`: Follow links. `<Plug>Markdown_FollowLink`
 #### Insert mode
    - `Tab`: Indent new bullets, jump through empty fields in links. `<Plug>Markdown_Jump`
+   - `Shift-Tab`: Deindent new bullets. `<Plug>Markdown_DeindentListItem`
    - `Ctrl-k`: Create new links. `<Plug>Markdown_CreateLink`
    - `O`: New line above, overrides default. `<Plug>Markdown_NewLineAbove`
    - `o`: New line below, overrides default. `<Plug>Markdown_NewLineBelow`

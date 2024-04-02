@@ -731,18 +731,18 @@ function! s:MarkdownClearSyntaxVariables()
 endfunction
 
 augroup Mkd
-    autocmd! * <buffer>
-    autocmd BufWinLeave <buffer> mkview!
-    autocmd BufWinEnter <buffer> silent! loadview
-    autocmd BufWinEnter <buffer> call s:MarkdownRefreshSyntax(1)
+    autocmd!
+    autocmd BufWinEnter *.md call s:MarkdownRefreshSyntax(1)
     " workaround, even without options in viewoptions it still saves this
     " so it needs to be reset every time so that someone who has set their own
     " foldmethod(not manual) isn't stuck on it.
-    autocmd BufWinEnter <buffer> setlocal foldmethod=manual
-    autocmd BufUnload <buffer> call s:MarkdownClearSyntaxVariables()
-    autocmd BufWritePost <buffer> call s:MarkdownRefreshSyntax(0)
-    autocmd InsertEnter,InsertLeave <buffer> call s:MarkdownRefreshSyntax(0)
-    autocmd CursorHold,CursorHoldI <buffer> call s:MarkdownRefreshSyntax(0)
+    autocmd BufWinEnter *.md setlocal foldmethod=manual
+    autocmd BufUnload *.md call s:MarkdownClearSyntaxVariables()
+    autocmd BufWritePost *.md call s:MarkdownRefreshSyntax(0)
+    autocmd InsertEnter,InsertLeave *.md call s:MarkdownRefreshSyntax(0)
+    autocmd CursorHold,CursorHoldI *.md call s:MarkdownRefreshSyntax(0)
+
+    autocmd TextYankPost *.md call v:lua.require("markdown").reenum_wrapper(v:true)
 augroup END
 
 function! Foldtext_markdown()
@@ -780,10 +780,14 @@ call <sid>Map('<Plug>Markdown_MoveToCurHeader', '<sid>MoveToCurHeader')
 call <sid>Map('<Plug>Markdown_Checkbox', 'v:lua.require("markdown").toggle_checkbox')
 call <sid>Map('<Plug>Markdown_Fold', 'v:lua.require("markdown").fold')
 call <sid>Map('<Plug>Markdown_Jump', 'v:lua.require("markdown").jump')
+call <sid>Map('<Plug>Markdown_DeindentListItem', 'v:lua.require("markdown").deindent_list_item')
 call <sid>Map('<Plug>Markdown_CreateLink', 'v:lua.require("markdown").create_link')
 call <sid>Map('<Plug>Markdown_FollowLink', 'v:lua.require("markdown").follow_link')
 call <sid>Map('<Plug>Markdown_NewLineAbove', 'v:lua.require("markdown").new_line_above')
 call <sid>Map('<Plug>Markdown_NewLineBelow', 'v:lua.require("markdown").new_line_below')
+
+nnoremap <buffer> <silent> p p:lua require("markdown").reenum_wrapper()<CR>
+nnoremap <buffer> <silent> P P:lua require("markdown").reenum_wrapper()<CR>
 
 if !get(g:, 'vim_markdown_no_default_key_mappings', 0)
     call <sid>MapNotHasMapTo(']]', 'Markdown_MoveToNextHeader', 'nv')
@@ -795,6 +799,7 @@ if !get(g:, 'vim_markdown_no_default_key_mappings', 0)
     call <sid>MapNotHasMapTo('<C-c>', 'Markdown_Checkbox', 'n')
     call <sid>MapNotHasMapTo('<TAB>', 'Markdown_Fold', 'n')
     call <sid>MapNotHasMapTo('<TAB>', 'Markdown_Jump', 'i')
+    call <sid>MapNotHasMapTo('<S-TAB>', 'Markdown_DeindentListItem', 'ni')
     call <sid>MapNotHasMapTo('<C-k>', 'Markdown_CreateLink', 'vi')
     call <sid>MapNotHasMapTo('<CR>', 'Markdown_FollowLink', 'n')
     call <sid>MapNotHasMapTo('o', 'Markdown_NewLineBelow', 'n')

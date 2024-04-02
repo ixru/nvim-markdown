@@ -8,21 +8,78 @@ local regex = {
     ordered_list        = "^%s*%d+[%)%.]",
 }
 
+local function get_nearest_ancestor_node(node, type)
+    if not node then
+        return nil
+    end
+    local cur_node = node
+    repeat
+        cur_node = cur_node:parent()
+    until cur_node == nil or cur_node:type() == type
+    return cur_node
+end
+
+function M.reenumerate_numbered_list()
+    local list_node = get_nearest_ancestor_node(vim.treesitter.get_node(), 'list')
+    if list_node == nil then
+        return
+    end
+    repeat
+        local idx = 1
+        for item, _ in list_node:iter_children()
+        do
+            local node = item:named_child { 0 }
+            if node:type():sub(1, 11) == 'list_marker' then
+                local sr, sc, er, ec = node:range()
+                local new_list_marker, _ = vim.api.nvim_buf_get_text(0, sr, sc, er, ec, {})[1]:gsub('%d+', idx)
+                vim.api.nvim_buf_set_text(0, sr, sc, er, ec, { new_list_marker })
+                idx = idx + 1
+            end
+        end
+        list_node = get_nearest_ancestor_node(list_node, 'list')
+    until not list_node
+end
+
+function M.deindent_list_item()
+    local cur_node = vim.treesitter.get_node()
+    local list_node = get_nearest_ancestor_node(cur_node, 'list')
+    local parent_list_node
+    if list_node then
+        parent_list_node = get_nearest_ancestor_node(list_node, 'list')
+        if not parent_list_node then
+            return
+        end
+    else
+        return
+    end
+    local psr, psc, per, pec = parent_list_node:named_child({ 0 }):named_child({ 0 }):range()
+    local parent_marker = vim.api.nvim_buf_get_text(0, psr, psc, per, pec, {})[1]
+    local csr, csc, cer, cec
+    if cur_node:type() ~= 'list_item' then
+        csr, csc, cer, cec = get_nearest_ancestor_node(cur_node, 'list_item'):named_child({ 0 }):range()
+    else
+        csr, csc, cer, cec = cur_node:named_child({ 0 }):range()
+    end
+    assert(psc <= csc)
+    vim.api.nvim_buf_set_text(0, csr, psc, cer, cec, { parent_marker })
+    print(parent_marker)
+    M.reenum_wrapper()
+end
+
 -- to make M.backspace only trigger after a new line has been created
-local should_run_callback = false
+local markdown_ns_id = vim.api.nvim_create_namespace('markdown')
 local function key_callback(key)
     local backspace_term = vim.api.nvim_replace_termcodes("<BS>",true, true, true)
 
     -- It sends some key on o and O "<80><fd>h", which is some special key I didn't ask for.
-    if should_run_callback and not (key:len() == 3 and key ~= backspace_term) then
+    if not (key:len() == 3 and key ~= backspace_term) then
         if key == backspace_term then
             M.backspace()
+            M.reenum_wrapper()
         end
-        should_run_callback = false
     end
+    vim.on_key(nil, markdown_ns_id)
 end
-
-vim.on_key(key_callback)
 
 -- Iterates up or down to find the first occurence of a section marker.
 -- line_num is included in the search
@@ -46,7 +103,7 @@ local function find_header_or_list(line_num)
     end
 
     while line_num > 0 and line_num <= line_count do
-        local line = vim.fn.getline(line_num)
+        line = vim.fn.getline(line_num)
         for name, pattern in pairs(regex) do
             if line:match(pattern) then
                 if (name == "setex_equals_header" or name == "setex_line_header") then
@@ -69,7 +126,7 @@ local function find_link_under_cursor()
     local cursor = vim.api.nvim_win_get_cursor(0)
     local line = vim.fn.getline(cursor[1])
     local column = cursor[2] + 1
-    local link_start, link_stop, link
+    local link_start, link_stop, text, url
     local start = 1
     repeat
         -- repeats until it finds a link the cursor is inside or ends as nil
@@ -231,7 +288,7 @@ local function parse_header(line_num)
     -- iterate down to find bottom
     local line_count = vim.api.nvim_buf_line_count(0)
     while true do
-        local line = vim.fn.getline(iter)
+        line = vim.fn.getline(iter)
         if line:match(regex.atx_header) then
             header.stop = iter - 1
             break
@@ -273,15 +330,12 @@ function M.backspace()
     if folded then
         newline = string.rep(" ", indent_length - 2) .. "a"
     else
-        -- TODO: reorder list when deleting ordered bullet
-        -- Need to append a letter since the backspace is handled normally after this function
         newline = string.rep(" ", indent_length) .. "a"
     end
 
     vim.fn.setline(".", newline)
     vim.api.nvim_win_set_cursor(0, {cursor[1], 10000})
 end
-
 
 -- Responsible for auto-inserting new bullet points
 local function newline(insert_line, folded)
@@ -327,17 +381,17 @@ local function newline(insert_line, folded)
 
         if tonumber(marker) then
             marker = marker + 1
-            -- TODO: reoder list if there are other bullets below
-            --other_bullets = parse_list(bullet.start)
-            --for _, bullet_line in pairs(other_bullets) do
-            --    local incremented = vim.fn.getline(bullet_line):sub
+            M.reenum_wrapper()
         end
 
         local new_line = indent .. marker .. delimiter .. trailing_indent .. checkbox
         vim.cmd("startinsert")
         vim.fn.append(insert_line, new_line)
         vim.api.nvim_win_set_cursor(0,{insert_line+1, 1000000})
-        should_run_callback = true
+        vim.schedule(
+            function()
+                vim.on_key(key_callback, markdown_ns_id)
+            end)
     elseif folded then
         vim.cmd("startinsert")
         vim.fn.append(insert_line, "")
@@ -376,7 +430,7 @@ function M.new_line_below()
 
         -- Normal return if in the middle of a line, or there is no bullet
         if column < #line or not bullet then
-            key = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
+            local key = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
             vim.api.nvim_feedkeys(key, "n", true)
             return
         end
@@ -412,6 +466,7 @@ function M.jump()
         line = line .. bullet.marker .. bullet.delimiter .. string.rep(" ", bullet.trailing_indent) .. checkbox
         vim.api.nvim_buf_set_lines(0, cursor[1] - 1, cursor[1], true, {line})
         vim.api.nvim_win_set_cursor(0,{cursor[1], 1000000})
+        M.reenum_wrapper()
     elseif link and cursor[2] >= link.start and cursor[2] <= link.stop then
         --error(vim.inspect({cursor,link}))
         local relative_position = cursor[2] - link.start + 1
@@ -693,6 +748,16 @@ function M.toggle_checkbox()
         end
         return
     end
+end
+
+function M.reenum_wrapper(autocmd)
+    vim.schedule(function()
+        if autocmd and vim.v.operator == 'y' then
+            M.reenumerate_numbered_list()
+        else
+            vim.cmd [[ undojoin | call v:lua.require("markdown").reenumerate_numbered_list() ]]
+        end
+    end)
 end
 
 --function M.visual_convert_to_link()
