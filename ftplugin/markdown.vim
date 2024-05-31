@@ -731,9 +731,18 @@ function! s:MarkdownClearSyntaxVariables()
 endfunction
 
 augroup Mkd
-    autocmd!
-    autocmd BufWinLeave,BufUnload,BufWritePost,InsertEnter,InsertLeave,CursorHold,CursorHoldI <buffer> if &filetype == 'markdown' && !v:lua.vim.api.nvim_win_get_config(0).relative | call <SID>MarkdownRefreshSyntax(0) | endif
-    autocmd BufWinEnter <buffer> if &filetype == 'markdown' && !v:lua.vim.api.nvim_win_get_config(0).relative | silent! loadview | call <SID>MarkdownRefreshSyntax(1) | setlocal foldmethod=manual | endif
+    autocmd! * <buffer>
+    autocmd BufWinLeave <buffer> silent! mkview!
+    autocmd BufWinEnter <buffer> silent! loadview
+    autocmd BufWinEnter <buffer> call s:MarkdownRefreshSyntax(1)
+    " workaround, even without options in viewoptions it still saves this
+    " so it needs to be reset every time so that someone who has set their own
+    " foldmethod(not manual) isn't stuck on it.
+    autocmd BufWinEnter <buffer> setlocal foldmethod=manual
+    autocmd BufUnload <buffer> call s:MarkdownClearSyntaxVariables()
+    autocmd BufWritePost <buffer> call s:MarkdownRefreshSyntax(0)
+    autocmd InsertEnter,InsertLeave <buffer> call s:MarkdownRefreshSyntax(0)
+    autocmd CursorHold,CursorHoldI <buffer> call s:MarkdownRefreshSyntax(0)
 augroup END
 
 function! Foldtext_markdown()
