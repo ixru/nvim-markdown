@@ -14,7 +14,7 @@ local function key_callback(key)
     local backspace_term = vim.api.nvim_replace_termcodes("<BS>",true, true, true)
 
     -- It sends some key on o and O "<80><fd>h", which is some special key I didn't ask for.
-    if should_run_callback and not (key:len() == 3 and key ~= backspace_term) then
+    if should_run_callback and not (key == '\x80\xfdh' and key ~= backspace_term) then
         if key == backspace_term then
             M.backspace()
         end
