@@ -731,8 +731,10 @@ function! s:MarkdownClearSyntaxVariables()
 endfunction
 
 augroup Mkd
-    autocmd!
-    autocmd BufWinEnter *.md call s:MarkdownRefreshSyntax(1)
+    autocmd! * <buffer>
+    autocmd BufWinLeave <buffer> silent! mkview!
+    autocmd BufWinEnter <buffer> silent! loadview
+    autocmd BufWinEnter <buffer> call s:MarkdownRefreshSyntax(1)
     " workaround, even without options in viewoptions it still saves this
     " so it needs to be reset every time so that someone who has set their own
     " foldmethod(not manual) isn't stuck on it.
