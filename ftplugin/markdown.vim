@@ -752,7 +752,7 @@ endfunction
 
 setlocal comments=b:> " blockquote
 setlocal formatoptions+=r " auto-insert > on newline
-setlocal conceallevel=2
+let &l:conceallevel = exists('g:vim_markdown_conceal') ? g:vim_markdown_conceal : 2
 setlocal viewoptions=folds,cursor
 setlocal foldtext=Foldtext_markdown()
 setlocal foldopen-=undo
