@@ -62,7 +62,6 @@ function M.deindent_list_item()
     end
     assert(psc <= csc)
     vim.api.nvim_buf_set_text(0, csr, psc, cer, cec, { parent_marker })
-    print(parent_marker)
     M.reenum_wrapper()
 end
 
