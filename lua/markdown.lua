@@ -754,7 +754,7 @@ function M.reenum_wrapper(autocmd)
         if autocmd and vim.v.operator == 'y' then
             M.reenumerate_numbered_list()
         else
-            vim.cmd [[ undojoin | call v:lua.require("markdown").reenumerate_numbered_list() ]]
+            vim.cmd [[ silent! undojoin | call v:lua.require("markdown").reenumerate_numbered_list() ]]
         end
     end)
 end
