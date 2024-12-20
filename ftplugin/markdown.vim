@@ -738,13 +738,13 @@ augroup Mkd
     " workaround, even without options in viewoptions it still saves this
     " so it needs to be reset every time so that someone who has set their own
     " foldmethod(not manual) isn't stuck on it.
-    autocmd BufWinEnter *.md setlocal foldmethod=manual
-    autocmd BufUnload *.md call s:MarkdownClearSyntaxVariables()
-    autocmd BufWritePost *.md call s:MarkdownRefreshSyntax(0)
-    autocmd InsertEnter,InsertLeave *.md call s:MarkdownRefreshSyntax(0)
-    autocmd CursorHold,CursorHoldI *.md call s:MarkdownRefreshSyntax(0)
+    autocmd BufWinEnter <buffer> setlocal foldmethod=manual
+    autocmd BufUnload <buffer> call s:MarkdownClearSyntaxVariables()
+    autocmd BufWritePost <buffer> call s:MarkdownRefreshSyntax(0)
+    autocmd InsertEnter,InsertLeave <buffer> call s:MarkdownRefreshSyntax(0)
+    autocmd CursorHold,CursorHoldI <buffer> call s:MarkdownRefreshSyntax(0)
 
-    autocmd TextYankPost *.md call v:lua.require("markdown").reenum_wrapper(v:true)
+    autocmd TextYankPost <buffer> call v:lua.require("markdown").reenum_wrapper(v:true)
 augroup END
 
 function! Foldtext_markdown()
