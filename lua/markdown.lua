@@ -512,11 +512,27 @@ function M.follow_link()
             -- an anchor
             vim.fn.search("^#* "..link.url:sub(2))
         else
-            if string.match(link.url, "^[~/]") then
-                vim.cmd("e " .. link.url)
-            else
-                -- a relative path
-                vim.cmd("e " .. vim.fn.expand('%:p:h') .. '/' .. link.url)
+            -- a file
+            -- check if path conatains line number (ex. file.md#L10)
+            local line_number = link.url:match("#L(%d+)$") or ""
+            if line_number ~= "" then
+                -- remove line number info if it exists
+                line_number = "+" .. line_number .. " "
+                link.url = link.url:gsub("#L%d+$", "")
+            end
+
+            -- try to follow link
+            local ok, _ = pcall(function ()
+                if string.match(link.url, "^[~/]") then
+                    vim.cmd("e " .. line_number .. link.url)
+                else
+                    -- a relative path
+                    vim.cmd("e " .. line_number .. vim.fn.expand('%:p:h') .. '/' .. link.url)
+                end
+            end)
+
+            if not ok then
+                vim.notify("Invalid link: " .. link.url, vim.log.levels.ERROR)
             end
         end
     elseif word then
