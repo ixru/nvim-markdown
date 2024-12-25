@@ -512,8 +512,9 @@ function M.follow_link()
             -- an anchor
             vim.fn.search("^#* "..link.url:sub(2))
         else
-            -- a file
-            -- check if path conatains line number (ex. file.md#L10)
+            -- a file path
+
+            -- check if path contains a line number (ex. file.md#L10)
             local line_number = link.url:match("#L(%d+)$") or ""
             if line_number ~= "" then
                 -- remove line number info if it exists
@@ -521,9 +522,10 @@ function M.follow_link()
                 link.url = link.url:gsub("#L%d+$", "")
             end
 
-            -- try to follow link
+            -- try to follow path
             local ok, _ = pcall(function ()
                 if string.match(link.url, "^[~/]") then
+                    -- an absolute path
                     vim.cmd("e " .. line_number .. link.url)
                 else
                     -- a relative path
@@ -539,10 +541,6 @@ function M.follow_link()
         if word.text:match("^https?://") then
             -- Bare url i.e without link syntax
             vim.call("netrw#BrowseX", word.text, 0)
-        else
-            -- create a link
-            local filename = string.lower(word.text:gsub("%s","_") .. ".md")
-            vim.cmd('norm! "_ciW[' .. word.text .. '](' .. filename ..')')
         end
     end
 end
