@@ -507,7 +507,7 @@ function M.follow_link()
     if link and link.url then
         if link.url:match("^https?://") then
             -- a link
-            vim.call("netrw#BrowseX", link.url, 0)
+            vim.ui.open(link.url)
         else
             -- a file path/anchor
 
@@ -550,7 +550,7 @@ function M.follow_link()
     elseif word then
         if word.text:match("^https?://") then
             -- Bare url i.e without link syntax
-            vim.call("netrw#BrowseX", word.text, 0)
+            vim.ui.open(link.url)
         end
     end
 end
