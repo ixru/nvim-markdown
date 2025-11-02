@@ -550,7 +550,7 @@ function M.follow_link()
     elseif word then
         if word.text:match("^https?://") then
             -- Bare url i.e without link syntax
-            vim.ui.open(link.url)
+            vim.ui.open(word.text)
         end
     end
 end
